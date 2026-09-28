@@ -1,6 +1,8 @@
 import { useState } from 'react'
+
 import {
   eq,
+  useDbClient,
   useLiveQuery,
 } from '@tanstack/react-db'
 
@@ -10,8 +12,11 @@ import {
 } from './collections'
 
 function App() {
-  const [title, setTitle] = useState('')
-  const [userId, setUserId] = useState(1)
+  const [title, setTitle] =
+    useState('')
+
+  const [userId, setUserId] =
+    useState(1)
 
   const [
     selectedUserId,
@@ -23,6 +28,12 @@ function App() {
     setFailNextComplete,
   ] = useState(false)
 
+  const db = useDbClient()
+
+  // descriptorから実体Collectionを取得
+  const todos =
+    db.collection(todosCollection)
+
   // ユーザー一覧
   const { data: users = [] } =
     useLiveQuery({
@@ -32,9 +43,9 @@ function App() {
         }),
     })
 
-  // 全Todo一覧
+  // 全Todo
   const {
-    data: todos = [],
+    data: allTodos = [],
     isLoading,
   } = useLiveQuery({
     query: (q) =>
@@ -43,29 +54,35 @@ function App() {
           todo: todosCollection,
         })
         .where(({ todo }) =>
-          eq(todo.completed, false),
+          eq(
+            todo.completed,
+            false,
+          ),
         ),
   })
 
-  // 選択したユーザーのTodo一覧
-  // 同じtodosCollectionを別の条件で参照
-  const { data: userTodos = [] } =
-    useLiveQuery({
-      query: (q) =>
-        q
-          .from({
-            todo: todosCollection,
-          })
-          .where(({ todo }) =>
-            eq(
-              todo.userId,
-              selectedUserId,
-            ),
-          )
-          .where(({ todo }) =>
-            eq(todo.completed, false),
+  // 選択ユーザーのTodo
+  const {
+    data: userTodos = [],
+  } = useLiveQuery({
+    query: (q) =>
+      q
+        .from({
+          todo: todosCollection,
+        })
+        .where(({ todo }) =>
+          eq(
+            todo.userId,
+            selectedUserId,
           ),
-    })
+        )
+        .where(({ todo }) =>
+          eq(
+            todo.completed,
+            false,
+          ),
+        ),
+  })
 
   const addTodo = (event) => {
     event.preventDefault()
@@ -74,7 +91,7 @@ function App() {
       return
     }
 
-    todosCollection.insert({
+    todos.insert({
       id: Date.now(),
       title,
       userId: Number(userId),
@@ -85,7 +102,7 @@ function App() {
   }
 
   const completeTodo = (id) => {
-    todosCollection.update(
+    todos.update(
       id,
       (draft) => {
         draft.completed = true
@@ -113,10 +130,11 @@ function App() {
       setFailNextComplete(true)
     }
 
-  const selectedUser = users.find(
-    (user) =>
-      user.id === selectedUserId,
-  )
+  const selectedUser =
+    users.find(
+      (user) =>
+        user.id === selectedUserId,
+    )
 
   if (isLoading) {
     return <p>Loading...</p>
@@ -132,7 +150,9 @@ function App() {
         <input
           value={title}
           onChange={(event) =>
-            setTitle(event.target.value)
+            setTitle(
+              event.target.value,
+            )
           }
           placeholder="Todo"
         />
@@ -141,7 +161,9 @@ function App() {
           value={userId}
           onChange={(event) =>
             setUserId(
-              Number(event.target.value),
+              Number(
+                event.target.value,
+              ),
             )
           }
         >
@@ -165,7 +187,7 @@ function App() {
       <h2>Todo一覧</h2>
 
       <ul>
-        {todos.map((todo) => (
+        {allTodos.map((todo) => (
           <li key={todo.id}>
             {todo.title}
 
@@ -184,13 +206,17 @@ function App() {
 
       <hr />
 
-      <h2>ユーザーごとのTodo</h2>
+      <h2>
+        ユーザーごとのTodo
+      </h2>
 
       <select
         value={selectedUserId}
         onChange={(event) =>
           setSelectedUserId(
-            Number(event.target.value),
+            Number(
+              event.target.value,
+            ),
           )
         }
       >
@@ -235,7 +261,9 @@ function App() {
         onClick={
           enableFailNextComplete
         }
-        disabled={failNextComplete}
+        disabled={
+          failNextComplete
+        }
       >
         {failNextComplete
           ? '次の完了処理は失敗します'

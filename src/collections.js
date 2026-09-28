@@ -1,8 +1,10 @@
-import { QueryClient } from '@tanstack/query-core'
-import { createCollection } from '@tanstack/react-db'
-import { queryCollectionOptions } from '@tanstack/query-db-collection'
+import {
+  collectionOptions,
+} from '@tanstack/react-db'
 
-export const queryClient = new QueryClient()
+import {
+  queryCollectionOptions,
+} from '@tanstack/query-db-collection'
 
 async function fetchJson(url, options) {
   const response = await fetch(url, options)
@@ -16,67 +18,83 @@ async function fetchJson(url, options) {
   return response.json()
 }
 
-export const usersCollection = createCollection(
-  queryCollectionOptions({
-    id: 'users',
+export const usersCollection =
+  collectionOptions(
+    'users',
+    (client) =>
+      queryCollectionOptions({
+        id: 'users',
 
-    queryKey: ['users'],
+        queryKey: ['users'],
 
-    queryFn: () =>
-      fetchJson('/api/users'),
+        queryFn: () =>
+          fetchJson('/api/users'),
 
-    queryClient,
-
-    getKey: (user) => user.id,
-  }),
-)
-
-export const todosCollection = createCollection(
-  queryCollectionOptions({
-    id: 'todos',
-
-    queryKey: ['todos'],
-
-    queryFn: () =>
-      fetchJson('/api/todos'),
-
-    queryClient,
-
-    getKey: (todo) => todo.id,
-
-    onInsert: async ({ transaction }) => {
-      const mutation =
-        transaction.mutations[0]
-
-      await fetchJson('/api/todos', {
-        method: 'POST',
-        headers: {
-          'Content-Type':
-            'application/json',
-        },
-        body: JSON.stringify(
-          mutation.modified,
-        ),
-      })
-    },
-
-    onUpdate: async ({ transaction }) => {
-      const mutation =
-        transaction.mutations[0]
-
-      await fetchJson(
-        `/api/todos/${mutation.key}`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type':
-              'application/json',
-          },
-          body: JSON.stringify(
-            mutation.changes,
+        queryClient:
+          client.requireDependency(
+            'queryClient',
           ),
+
+        getKey: (user) => user.id,
+      }),
+  )
+
+export const todosCollection =
+  collectionOptions(
+    'todos',
+    (client) =>
+      queryCollectionOptions({
+        id: 'todos',
+
+        queryKey: ['todos'],
+
+        queryFn: () =>
+          fetchJson('/api/todos'),
+
+        queryClient:
+          client.requireDependency(
+            'queryClient',
+          ),
+
+        getKey: (todo) => todo.id,
+
+        onInsert: async ({
+          transaction,
+        }) => {
+          const mutation =
+            transaction.mutations[0]
+
+          await fetchJson('/api/todos', {
+            method: 'POST',
+            headers: {
+              'Content-Type':
+                'application/json',
+            },
+            body: JSON.stringify(
+              mutation.modified,
+            ),
+          })
         },
-      )
-    },
-  }),
-)
+
+        onUpdate: async ({
+          transaction,
+        }) => {
+          const mutation =
+            transaction.mutations[0]
+
+          await fetchJson(
+            `/api/todos/${mutation.key}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'Content-Type':
+                  'application/json',
+              },
+              body: JSON.stringify(
+                mutation.changes,
+              ),
+            },
+          )
+        },
+      }),
+  )

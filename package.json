@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@tanstack/query-core": "5.101.4",
-    "@tanstack/query-db-collection": "1.2.1",
-    "@tanstack/react-db": "0.1.95",
+    "@tanstack/query-db-collection": "1.2.7",
+    "@tanstack/react-db": "0.3.2",
     "express": "5.2.1",
     "react": "19.2.8",
     "react-dom": "19.2.8"
